@@ -17,13 +17,16 @@ class DeclarationBundlerPlugin {
 	}
 
 	apply(compiler: webpack.Compiler) {
-		//when the compiler is ready to emit files
-		compiler.hooks.emit.tapAsync('DeclarationBundlerPlugin', (compilation: webpack.Compilation, callback) => {
+		const { webpack } = compiler
 
+		const { Compilation } = webpack
+
+		const { RawSource } = webpack.sources
+ 
+		compiler.hooks.thisCompilation.tap('DeclarationBundlerPlugin', (compilation: webpack.Compilation) => {
 			compilation.hooks.processAssets.tap({
 				name: 'DeclarationBundlerPlugin',
-				stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
-				additionalAssets: true
+				stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE
 			}, (assets) => {
 				//collect all generated declaration files
 				//and remove them from the assets that will be emitted
@@ -31,37 +34,14 @@ class DeclarationBundlerPlugin {
 				for (const filename in assets) {
 					if (filename.indexOf('.d.ts') !== -1) {
 						declarationFiles[filename] = assets[filename]
-						delete assets[filename]
+						compilation.deleteAsset(filename)
 					}
 				}
 				//combine them into one declaration file
 				const combinedDeclaration = this.generateCombinedDeclaration(declarationFiles)
 
 				//and insert that back into the assets
-				assets[this.out] = {
-					source() {
-						return combinedDeclaration
-					},
-					size() {
-						return combinedDeclaration.length
-					},
-					map() {
-						return {}
-					},
-					updateHash() { },
-					buffer() {
-						return Buffer.from(combinedDeclaration)
-					},
-					sourceAndMap() {
-						return {
-							map: {},
-							source: combinedDeclaration
-						}
-					}
-				}
-
-				//webpack may continue now
-				callback();
+				compilation.emitAsset(this.out, new RawSource(combinedDeclaration))
 			})
 		});
 	}

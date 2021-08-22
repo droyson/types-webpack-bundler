@@ -1,24 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var webpack = __importStar(require("webpack"));
 var DeclarationBundlerPlugin = /** @class */ (function () {
     function DeclarationBundlerPlugin(options) {
         if (options === void 0) { options = {}; }
@@ -31,12 +11,13 @@ var DeclarationBundlerPlugin = /** @class */ (function () {
     }
     DeclarationBundlerPlugin.prototype.apply = function (compiler) {
         var _this = this;
-        //when the compiler is ready to emit files
-        compiler.hooks.emit.tapAsync('DeclarationBundlerPlugin', function (compilation, callback) {
+        var webpack = compiler.webpack;
+        var Compilation = webpack.Compilation;
+        var RawSource = webpack.sources.RawSource;
+        compiler.hooks.thisCompilation.tap('DeclarationBundlerPlugin', function (compilation) {
             compilation.hooks.processAssets.tap({
                 name: 'DeclarationBundlerPlugin',
-                stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
-                additionalAssets: true
+                stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE
             }, function (assets) {
                 //collect all generated declaration files
                 //and remove them from the assets that will be emitted
@@ -44,35 +25,13 @@ var DeclarationBundlerPlugin = /** @class */ (function () {
                 for (var filename in assets) {
                     if (filename.indexOf('.d.ts') !== -1) {
                         declarationFiles[filename] = assets[filename];
-                        delete assets[filename];
+                        compilation.deleteAsset(filename);
                     }
                 }
                 //combine them into one declaration file
                 var combinedDeclaration = _this.generateCombinedDeclaration(declarationFiles);
                 //and insert that back into the assets
-                assets[_this.out] = {
-                    source: function () {
-                        return combinedDeclaration;
-                    },
-                    size: function () {
-                        return combinedDeclaration.length;
-                    },
-                    map: function () {
-                        return {};
-                    },
-                    updateHash: function () { },
-                    buffer: function () {
-                        return Buffer.from(combinedDeclaration);
-                    },
-                    sourceAndMap: function () {
-                        return {
-                            map: {},
-                            source: combinedDeclaration
-                        };
-                    }
-                };
-                //webpack may continue now
-                callback();
+                compilation.emitAsset(_this.out, new RawSource(combinedDeclaration));
             });
         });
     };
