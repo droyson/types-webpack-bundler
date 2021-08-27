@@ -71,7 +71,7 @@ Which generates (when using the declaration=true flag for the typescript compile
     
 Which with the following webpack.config.js
 
-    var DeclarationBundlerPlugin = require('declaration-bundler-webpack-plugin');
+    var DeclarationBundlerPlugin = require('types-webpack-bundler');
     module.exports = {
         entry: './src/init.ts',
         output: {

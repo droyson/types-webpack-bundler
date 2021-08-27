@@ -2,7 +2,7 @@
 var DeclarationBundlerPlugin = /** @class */ (function () {
     function DeclarationBundlerPlugin(options) {
         if (options === void 0) { options = {}; }
-        this.out = options.out ? options.out : './build/';
+        this.out = options.out ? options.out : './build/index.d.ts';
         this.excludedReferences = options.excludedReferences ? options.excludedReferences : undefined;
         if (!options.moduleName) {
             throw new Error('please set a moduleName if you use mode:internal. new DeclarationBundlerPlugin({mode:\'internal\',moduleName:...})');

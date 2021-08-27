@@ -7,7 +7,7 @@ class DeclarationBundlerPlugin {
 	excludedReferences: string[];
 
 	constructor(options: any = {}) {
-		this.out = options.out ? options.out : './build/';
+		this.out = options.out ? options.out : './build/index.d.ts';
 		this.excludedReferences = options.excludedReferences ? options.excludedReferences : undefined;
 
 		if (!options.moduleName) {
