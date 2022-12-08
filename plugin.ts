@@ -63,10 +63,18 @@ class DeclarationBundlerPlugin {
 				var excludeLine: boolean = line == "";
 
 				//exclude export statements
-				excludeLine = excludeLine || line.indexOf("export =") !== -1;
+				excludeLine = excludeLine || line.indexOf("export =") !== -1 ||
+				    line.search(/^\s*export type \{/) !== -1 ||
+				    line.search(/^\s*export \{/) !== -1 ||
+				    line.search(/^\s*export \*/) !== -1;
 
 				//exclude import statements
-				excludeLine = excludeLine || (/import ([a-z0-9A-Z_-]+) = require\(/).test(line);
+				excludeLine = excludeLine ||
+				    (/import ([a-z0-9A-Z_-]+) = require\(/).test(line) ||
+				    (/import ([a-z0-9A-Z_-]+)/).test(line) ||
+				    (/import [\"\']/).test(line) ||
+				    (/import \{/).test(line) ||
+				    (/import \*/).test(line);
 
 				//if defined, check for excluded references
 				if (!excludeLine && this.excludedReferences && line.indexOf("<reference") !== -1) {
