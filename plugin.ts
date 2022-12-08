@@ -32,7 +32,7 @@ class DeclarationBundlerPlugin {
 				//and remove them from the assets that will be emitted
 				const declarationFiles: Object = {}
 				for (const filename in assets) {
-					if (filename.indexOf('.d.ts') !== -1) {
+					if (filename.search(/\.d\.ts$/) !== -1) {
 						declarationFiles[filename] = assets[filename]
 						compilation.deleteAsset(filename)
 					}
