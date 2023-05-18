@@ -4,6 +4,7 @@ var DeclarationBundlerPlugin = /** @class */ (function () {
         if (options === void 0) { options = {}; }
         this.out = options.out ? options.out : './build/index.d.ts';
         this.excludedReferences = options.excludedReferences ? options.excludedReferences : undefined;
+        this.excludedFolders = options.excludedFolders ? options.excludedFolders : [];
         if (!options.moduleName) {
             throw new Error('please set a moduleName if you use mode:internal. new DeclarationBundlerPlugin({mode:\'internal\',moduleName:...})');
         }
@@ -23,7 +24,7 @@ var DeclarationBundlerPlugin = /** @class */ (function () {
                 //and remove them from the assets that will be emitted
                 var declarationFiles = {};
                 for (var filename in assets) {
-                    if (filename.indexOf('.d.ts') !== -1) {
+                    if (filename.search(/\.d\.ts$/) !== -1) {
                         declarationFiles[filename] = assets[filename];
                         compilation.deleteAsset(filename);
                     }
@@ -43,14 +44,33 @@ var DeclarationBundlerPlugin = /** @class */ (function () {
             var data = declarationFile.source();
             var lines = data.split("\n");
             var i = lines.length;
+            var isExcluded = false;
+            for (var _i = 0, _a = this.excludedFolders; _i < _a.length; _i++) {
+                var excludedFolder = _a[_i];
+                if (fileName.indexOf(excludedFolder) == 0) {
+                    console.log("Excluding " + fileName + " from declaration bundling.");
+                    isExcluded = true;
+                    break;
+                }
+            }
+            if (isExcluded)
+                continue;
             while (i--) {
                 var line = lines[i];
                 //exclude empty lines
                 var excludeLine = line == "";
                 //exclude export statements
-                excludeLine = excludeLine || line.indexOf("export =") !== -1;
+                excludeLine = excludeLine || line.indexOf("export =") !== -1 ||
+                    line.search(/^\s*export type \{/) !== -1 ||
+                    line.search(/^\s*export \{/) !== -1 ||
+                    line.search(/^\s*export \*/) !== -1;
                 //exclude import statements
-                excludeLine = excludeLine || (/import ([a-z0-9A-Z_-]+) = require\(/).test(line);
+                excludeLine = excludeLine ||
+                    (/import ([a-z0-9A-Z_-]+) = require\(/).test(line) ||
+                    (/import ([a-z0-9A-Z_-]+)/).test(line) ||
+                    (/import [\"\']/).test(line) ||
+                    (/import \{/).test(line) ||
+                    (/import \*/).test(line);
                 //if defined, check for excluded references
                 if (!excludeLine && this.excludedReferences && line.indexOf("<reference") !== -1) {
                     excludeLine = this.excludedReferences.some(function (reference) { return line.indexOf(reference) !== -1; });
