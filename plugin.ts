@@ -5,10 +5,12 @@ class DeclarationBundlerPlugin {
 	moduleName: string;
 	mode: string;
 	excludedReferences: string[];
+	excludedFolders: string[];
 
 	constructor(options: any = {}) {
 		this.out = options.out ? options.out : './build/index.d.ts';
 		this.excludedReferences = options.excludedReferences ? options.excludedReferences : undefined;
+		this.excludedFolders = options.excludedFolders ? options.excludedFolders : [];
 
 		if (!options.moduleName) {
 			throw new Error('please set a moduleName if you use mode:internal. new DeclarationBundlerPlugin({mode:\'internal\',moduleName:...})');
@@ -55,6 +57,16 @@ class DeclarationBundlerPlugin {
 			var lines = data.split("\n");
 			var i = lines.length;
 
+			let isExcluded = false;
+            for(let excludedFolder of this.excludedFolders) {
+                if(fileName.indexOf(excludedFolder) == 0) {
+                    console.log("Excluding " + fileName + " from declaration bundling.");
+                    isExcluded = true;
+                    break;
+                }
+            }
+            if(isExcluded)
+                continue;
 
 			while (i--) {
 				var line = lines[i];
